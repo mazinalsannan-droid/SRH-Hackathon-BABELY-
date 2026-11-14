@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Babbly background generator</title>
+<style>body{margin:0;background:#111}canvas{display:block}</style></head>
+<body>
+<canvas id="c"></canvas>
+<script>
+/* Draws an original "infinite hexagon library at dusk" scene.
+   Open in a browser and the canvas renders; tools/render-assets.py saves it as JPG.
+   URL params: ?w=1200&h=2000&seed=7 */
+const P = new URLSearchParams(location.search);
+const W = +P.get("w") || 1200, H = +P.get("h") || 2000, SEED = +P.get("seed") || 7;
+const cv = document.getElementById("c"); cv.width = W; cv.height = H;
+const g = cv.getContext("2d");
+let s = SEED >>> 0;
+const rnd = () => { s = (s + 0x6D2B79F5) | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const hex2rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+function mix(a, b, t) { const A = hex2rgb(a), B = hex2rgb(b); return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(",")})`; }
+
+const horizon = H * (W > H ? 0.24 : 0.17);
+/* sky */
+const sky = g.createLinearGradient(0, 0, 0, horizon * 1.25);
+sky.addColorStop(0, "#26304A"); sky.addColorStop(0.45, "#5E6782"); sky.addColorStop(0.8, "#D69A5A"); sky.addColorStop(1, "#F5CF8C");
+g.fillStyle = sky; g.fillRect(0, 0, W, H);
+const sun = g.createRadialGradient(W * 0.5, horizon, 0, W * 0.5, horizon, W * 0.55);
+sun.addColorStop(0, "rgba(255,222,160,.95)"); sun.addColorStop(0.35, "rgba(250,180,110,.35)"); sun.addColorStop(1, "rgba(250,180,110,0)");
+g.fillStyle = sun; g.fillRect(0, 0, W, H);
+/* clouds */
+for (let i = 0; i < 26; i++) {
+  const x = rnd() * W, y = horizon * (0.15 + rnd() * 0.7), rx = W * (0.08 + rnd() * 0.18), ry = rx * (0.12 + rnd() * 0.1);
+  const cg = g.createRadialGradient(x, y, 0, x, y, rx);
+  cg.addColorStop(0, `rgba(${y < horizon * 0.5 ? "40,48,70" : "120,100,110"},${0.25 + rnd() * 0.25})`); cg.addColorStop(1, "rgba(40,48,70,0)");
+  g.save(); g.translate(x, y); g.scale(1, ry / rx); g.translate(-x, -y); g.fillStyle = cg; g.beginPath(); g.arc(x, y, rx, 0, Math.PI * 2); g.fill(); g.restore();
+}
+
+const HAZE = "#C9A57A";
+const BOOKS = ["#8A5A30", "#A86B3A", "#B98A4E", "#7E3B2E", "#6D5236", "#C49A5C", "#7C6440", "#4F5A44", "#8B3A30", "#D2A865", "#5E4A6B"];
+function hexPts(cx, cy, R, q) { const p = []; for (let i = 0; i < 6; i++) { const a = Math.PI / 3 * i; p.push([cx + R * Math.cos(a), cy + R * q * Math.sin(a)]); } return p; }
+function poly(pts) { g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); }
+
+function face(a, b, h, t, shade, detail) {
+  const q = [a, b, [b[0], b[1] + h], [a[0], a[1] + h]];
+  const base = mix(mix("#4A321E", "#000000", shade), HAZE, (1 - t) * 0.75);
+  poly(q); g.fillStyle = base; g.fill();
+  const fw = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  const cols = Math.max(1, Math.round(fw / Math.max(10, h / 3.2)));
+  const rows = Math.max(2, Math.round(h / Math.max(6, fw / 2.2)));
+  const pillar = mix(mix("#E9DCC0", "#000000", shade * 0.7), HAZE, (1 - t) * 0.65);
+  const lerp = (p, r, k) => [p[0] + (r[0] - p[0]) * k, p[1] + (r[1] - p[1]) * k];
+  /* books */
+  if (detail > 0.25) {
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const u0 = c / cols, u1 = (c + 1) / cols, v0 = r / rows, v1 = (r + 1) / rows;
+      const n = Math.max(3, Math.round(6 * detail));
+      for (let k = 0; k < n; k++) {
+        const uu0 = u0 + (u1 - u0) * (0.08 + 0.84 * k / n), uu1 = uu0 + (u1 - u0) * 0.84 / n * 0.85;
+        const top = v0 + (v1 - v0) * (0.12 + rnd() * 0.12), bot = v1 - (v1 - v0) * 0.08;
+        const p0 = lerp(a, b, uu0), p1 = lerp(a, b, uu1);
+        g.beginPath(); g.moveTo(p0[0], p0[1] + h * top); g.lineTo(p1[0], p1[1] + h * top); g.lineTo(p1[0], p1[1] + h * bot); g.lineTo(p0[0], p0[1] + h * bot); g.closePath();
+        g.fillStyle = mix(mix(BOOKS[Math.floor(rnd() * BOOKS.length)], "#000000", shade * 0.8), HAZE, (1 - t) * 0.7); g.fill();
+      }
+    }
+  }
+  /* shelves */
+  g.strokeStyle = pillar; g.lineWidth = Math.max(0.6, h / rows * 0.09);
+  for (let r = 0; r <= rows; r++) { const v = r / rows; g.beginPath(); g.moveTo(a[0], a[1] + h * v); g.lineTo(b[0], b[1] + h * v); g.stroke(); }
+  /* pillars */
+  g.lineWidth = Math.max(0.8, fw / cols * 0.08);
+  for (let c = 0; c <= cols; c++) { const p = lerp(a, b, c / cols); g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(p[0], p[1] + h); g.stroke(); }
+  /* ladder */
+  if (detail > 0.55 && rnd() < 0.35) {
+    const u = 0.2 + rnd() * 0.6, p = lerp(a, b, u), lean = fw * 0.12, w = fw * 0.05;
+    g.strokeStyle = mix("#3A2414", HAZE, (1 - t) * 0.5); g.lineWidth = Math.max(1, w * 0.18);
+    const x0 = p[0] - lean, y0 = p[1] + h, x1 = p[0], y1 = p[1] + h * 0.08;
+    g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.moveTo(x0 + w, y0); g.lineTo(x1 + w, y1); g.stroke();
+    for (let k = 1; k < 14; k++) { const kk = k / 14; g.beginPath(); g.moveTo(x0 + (x1 - x0) * kk, y0 + (y1 - y0) * kk); g.lineTo(x0 + w + (x1 - x0) * kk, y0 + (y1 - y0) * kk); g.stroke(); }
+  }
+}
+
+function tower(cx, cy, R, h, t, detail, tiers) {
+  const q = 0.42;
+  let y = cy, r = R;
+  for (let tier = 0; tier < tiers; tier++) {
+    const top = hexPts(cx, y, r, q);
+    /* visible side faces: bottom half (0-60, 60-120, 120-180 deg) */
+    face(top[0], top[1], h, t, 0.05, detail);
+    face(top[1], top[2], h, t, 0.2, detail);
+    face(top[2], top[3], h, t, 0.42, detail);
+    /* rim and hollow well */
+    poly(top); g.fillStyle = mix("#EFE3C6", HAZE, (1 - t) * 0.6); g.fill();
+    const inner = hexPts(cx, y, r * 0.8, q);
+    poly(inner);
+    const wg = g.createLinearGradient(cx, y - r * q, cx, y + r * q);
+    wg.addColorStop(0, mix("#2A1B10", HAZE, (1 - t) * 0.6)); wg.addColorStop(1, mix("#5A3B20", HAZE, (1 - t) * 0.6));
+    g.fillStyle = wg; g.fill();
+    /* inner shelves glimpse */
+    g.strokeStyle = mix("#C9B48E", HAZE, (1 - t) * 0.6); g.lineWidth = Math.max(0.5, r * 0.012);
+    for (let i = 3; i <= 5; i++) { const p = inner[i % 6], p2 = inner[(i + 1) % 6]; for (let k = 1; k < 4; k++) { const kk = k / 4; g.beginPath(); g.moveTo(p[0] + (p2[0] - p[0]) * kk, p[1] + (p2[1] - p[1]) * kk); g.lineTo(p[0] + (p2[0] - p[0]) * kk, p[1] + (p2[1] - p[1]) * kk + r * q * 0.7); g.stroke(); } }
+    g.strokeStyle = mix("#7A5A33", HAZE, (1 - t) * 0.6); g.lineWidth = Math.max(0.6, r * 0.02); poly(top); g.stroke();
+    /* next tier sits higher and narrower */
+    y = y - h * (0.55 + rnd() * 0.25); r = r * 0.62; h = h * (0.75 + rnd() * 0.2);
+    if (tier + 1 < tiers) { /* drawing the upper tier after the lower: shift so it rises from the well */ }
+  }
+}
+
+const ROWS = W > H ? 11 : 13;
+for (let k = 0; k < ROWS; k++) {
+  const t = k / (ROWS - 1), e = Math.pow(t, 1.7);
+  const y = horizon + (H * 1.08 - horizon) * e;
+  const R = W * (0.02 + 0.17 * e) * (W > H ? 0.42 : 1);
+  const step = R * 2.05, off = (k % 2) * step / 2 + rnd() * step * 0.3;
+  const items = [];
+  for (let x = -step + off; x < W + step; x += step * (0.95 + rnd() * 0.25)) items.push(x);
+  /* tall ones get drawn after short ones so overlaps look right */
+  const towers = items.map((x) => ({ x, tiers: rnd() < 0.18 + t * 0.12 ? 2 + (rnd() < 0.3 ? 1 : 0) : 1, h: R * (2.2 + rnd() * 2.2) }));
+  towers.sort((a, b) => a.tiers - b.tiers);
+  towers.forEach((tw) => {
+    const lift = tw.tiers > 1 ? tw.h * 0.6 : 0;
+    tower(tw.x, y - lift, R, tw.h, t, e * 1.2, tw.tiers);
+  });
+  /* haze band between rows */
+  const hz = g.createLinearGradient(0, y - R * 2, 0, y + R);
+  hz.addColorStop(0, "rgba(201,165,122,0)"); hz.addColorStop(1, `rgba(201,165,122,${0.08 * (1 - t)})`);
+  g.fillStyle = hz; g.fillRect(0, y - R * 2, W, R * 3);
+}
+
+/* warm light from the glow + vignette */
+const glow = g.createRadialGradient(W * 0.5, horizon, 0, W * 0.5, horizon, H * 0.9);
+glow.addColorStop(0, "rgba(255,210,140,.18)"); glow.addColorStop(1, "rgba(255,210,140,0)");
+g.fillStyle = glow; g.fillRect(0, 0, W, H);
+const vig = g.createRadialGradient(W / 2, H * 0.45, Math.min(W, H) * 0.35, W / 2, H * 0.5, Math.max(W, H) * 0.8);
+vig.addColorStop(0, "rgba(0,0,0,0)"); vig.addColorStop(1, "rgba(10,6,2,.55)");
+g.fillStyle = vig; g.fillRect(0, 0, W, H);
+document.title = "done";
+</script>
+</body></html>

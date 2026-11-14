@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Babbly</title>
+<meta name="description" content="Hide messages in the infinite Library of Babel and send them to friends.">
+<meta name="theme-color" content="#1A120B">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/mascot.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Babbly">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="bg" aria-hidden="true"></div>
+
+<div id="app">
+  <!-- ================= WELCOME ================= -->
+  <section class="screen" id="welcome">
+    <div class="welcome glass">
+      <img class="mascot float" src="assets/mascot.svg" alt="Babbly, a bubble mail carrier">
+      <h1 class="brand">Babbly</h1>
+      <p class="tag">Hide messages in the infinite library.<br>Only the right Babbler can read them.</p>
+
+      <div class="seg" role="group" aria-label="Account" id="authSeg">
+        <button type="button" data-mode="login" aria-pressed="true">Sign in</button>
+        <button type="button" data-mode="register" aria-pressed="false">Create account</button>
+      </div>
+      <form id="authForm" novalidate>
+        <div class="field">
+          <label class="lbl" for="authUser">Username</label>
+          <input type="text" id="authUser" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="e.g. lena.hex">
+        </div>
+        <div class="field">
+          <label class="lbl" for="authPass">Password</label>
+          <div class="passrow"><input type="password" id="authPass" autocomplete="current-password" placeholder="At least 8 characters"><button type="button" class="eye" data-eye="authPass">Show</button></div>
+        </div>
+        <div class="err hidden" id="authErr" role="alert"></div>
+        <button class="btn primary big" type="submit" id="authBtn">Sign in</button>
+      </form>
+      <div class="divider">or</div>
+      <button class="btn ghost" id="guestBtn">Continue as guest</button>
+      <p class="fine" id="welcomeNote">Guests can hide, open and explore. Sign in to send and receive Babbles.</p>
+    </div>
+  </section>
+
+  <!-- ================= MAIN ================= -->
+  <section class="screen hidden" id="main">
+    <header class="top">
+      <img src="assets/mascot.svg" alt="">
+      <span class="name">Babbly</span>
+      <button class="who" id="whoBtn" aria-label="Your profile"><span id="whoName">Guest</span><span id="whoAvatar"></span></button>
+    </header>
+
+    <main class="views" id="views">
+      <!-- WRITE -->
+      <section class="view" id="v-write" aria-labelledby="h-write">
+        <h2 class="title" id="h-write">New Babble</h2>
+        <div class="card glass">
+          <div class="field">
+            <label class="sr" for="msg">Your message</label>
+            <textarea id="msg" placeholder="Write something to hide in the Library…"></textarea>
+            <div class="meta" id="msgMeta"><span id="msgHint"></span><span id="msgCount"></span></div>
+          </div>
+          <div class="field" id="toField">
+            <label class="lbl" for="toIn">To</label>
+            <input type="text" id="toIn" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="A Babbler's username (optional)">
+            <div class="suggest" id="toSuggest"></div>
+          </div>
+          <div class="opts" role="group" aria-label="Options">
+            <label class="opt" title="Only someone with the passphrase can read it"><input type="checkbox" id="optLock" checked><span>🔒 Lock</span></label>
+            <label class="opt" title="Also find it on libraryofbabel.info"><input type="checkbox" id="optReal" checked><span>🌐 Real Library</span></label>
+          </div>
+          <div class="field" id="passField">
+            <label class="lbl" for="pass">Passphrase</label>
+            <div class="passrow"><input type="password" id="pass" autocomplete="off" placeholder="Something only you two know"><button type="button" class="eye" data-eye="pass">Show</button></div>
+            <p class="fine">Tell them the passphrase in person or another way, never in the same place as the Babble.</p>
+          </div>
+          <div class="err hidden" id="writeErr" role="alert"></div>
+          <button class="btn primary big" id="hideBtn">Hide in the Library</button>
+        </div>
+      </section>
+
+      <!-- INBOX -->
+      <section class="view" id="v-inbox" aria-labelledby="h-inbox">
+        <h2 class="title" id="h-inbox">Inbox</h2>
+        <button class="btn ghost" id="pasteBtn">📋 Open a code, link or page</button>
+        <div class="seg" role="group" aria-label="Show" id="boxSeg">
+          <button type="button" data-box="inbox" aria-pressed="true">Received</button>
+          <button type="button" data-box="sent" aria-pressed="false">Sent</button>
+          <button type="button" data-box="saved" aria-pressed="false">Saved</button>
+        </div>
+        <div class="list" id="list"></div>
+      </section>
+
+      <!-- EXPLORE -->
+      <section class="view" id="v-explore" aria-labelledby="h-explore">
+        <h2 class="title" id="h-explore">Explore</h2>
+        <div class="seg" role="group" aria-label="Explore" id="exSeg">
+          <button type="button" data-ex="lucky" aria-pressed="true">🎲 Lucky</button>
+          <button type="button" data-ex="alikes" aria-pressed="false">✦ Look-alikes</button>
+        </div>
+
+        <div id="ex-lucky" style="display:flex;flex-direction:column;gap:14px">
+          <p class="sub" style="margin:0 4px">Every sentence ever written is somewhere in the Library. Go find one.</p>
+          <button class="btn primary dice" id="luckyBtn">🎲 I'm Feeling Babbly</button>
+          <button class="btn ghost" id="sentenceBtn">✦ Find a lucky sentence</button>
+          <div class="card glass hidden" id="sentenceCard">
+            <span class="lbl">Found in the Library</span>
+            <div class="quote" id="sentenceText"></div>
+            <div class="coords" id="sentenceCoords"></div>
+            <div class="row">
+              <button class="btn ghost small" id="sentenceSend">Send as Babble</button>
+              <button class="btn ghost small" id="sentenceSave">Save</button>
+              <a class="btn ghost small" id="sentenceReal" target="_blank" rel="noopener noreferrer" href="https://libraryofbabel.info">Real Library ↗</a>
+            </div>
+            <p class="note" id="sentenceNote"></p>
+          </div>
+          <div class="card glass hidden" id="pageCard">
+            <div class="metarow"><span class="lbl">A random page</span><span class="chip" id="pageCount"></span></div>
+            <div class="chips" id="pageWords"></div>
+            <div class="pagetext short" id="pageText"></div>
+            <div class="coords" id="pageCoords"></div>
+            <div class="row">
+              <button class="btn ghost small" id="pageRead">Read it all</button>
+              <button class="btn ghost small" id="pageMeaning">✦ What's it saying?</button>
+              <button class="btn ghost small" id="pageSave">Save</button>
+            </div>
+            <div class="block hidden" id="meaningBlock"><span class="lbl">Babbly's translation</span><div class="quote" style="font-size:19px" id="meaningText"></div></div>
+          </div>
+        </div>
+
+        <div id="ex-alikes" class="hidden" style="display:flex;flex-direction:column;gap:14px">
+          <div class="card glass">
+            <div class="field">
+              <label class="lbl" for="alikeIn">Find sentences like…</label>
+              <input type="text" id="alikeIn" value="to be or not to be" enterkeyhint="search">
+            </div>
+            <div class="seg" role="group" aria-label="How weird" id="weirdSeg">
+              <button type="button" data-w="close" aria-pressed="false">Close</button>
+              <button type="button" data-w="silly" aria-pressed="true">Silly</button>
+              <button type="button" data-w="unhinged" aria-pressed="false">Unhinged</button>
+            </div>
+            <button class="btn primary" id="alikeBtn">✦ Find look-alikes</button>
+            <div class="err hidden" id="alikeErr" role="alert"></div>
+          </div>
+          <div class="list" id="alikeList"></div>
+          <p class="note" id="alikeNote" style="padding:0 4px"></p>
+        </div>
+      </section>
+
+      <!-- ME -->
+      <section class="view" id="v-me" aria-labelledby="h-me">
+        <h2 class="title sr" id="h-me">Your profile</h2>
+        <div class="profile glass">
+          <div id="meAvatar"></div>
+          <div style="min-width:0">
+            <h2 id="meName">Guest</h2>
+            <span class="note" id="meSub">Browsing as a guest</span>
+          </div>
+        </div>
+        <div class="stats glass">
+          <div><b id="stSent">0</b><span>sent</span></div>
+          <div><b id="stRecv">0</b><span>received</span></div>
+          <div><b id="stSaved">0</b><span>saved</span></div>
+        </div>
+        <div class="menu glass">
+          <button id="mCreate" class="hidden"><span class="ic">✨</span><span>Create an account<small>Send and receive Babbles</small></span></button>
+          <button id="mInstall"><span class="ic">📲</span><span>Install on your phone<small>Add Babbly to your home screen</small></span></button>
+          <button id="mAi"><span class="ic">✦</span><span>AI helper<small id="aiStatus">Checking…</small></span></button>
+          <button id="mHow"><span class="ic">📚</span><span>How Babbly works<small>The Library, Double lock, real addresses</small></span></button>
+          <button id="mPassword" class="hidden"><span class="ic">🔑</span><span>Change password</span></button>
+          <button id="mLogout"><span class="ic">↩︎</span><span id="mLogoutLabel">Sign out</span></button>
+        </div>
+      </section>
+    </main>
+
+    <nav class="tabs glass" aria-label="Babbly">
+      <a href="#write" data-v="write"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg>Write</a>
+      <a href="#inbox" data-v="inbox"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3.5 7l8.5 6 8.5-6"/></svg>Inbox<span class="badge hidden" id="badge"></span></a>
+      <a href="#explore" data-v="explore"><svg viewBox="0 0 24 24"><path d="M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z"/><circle cx="12" cy="12" r="2.5"/></svg>Explore</a>
+      <a href="#me" data-v="me"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="4"/><path d="M4.5 20c1.5-3.5 4.3-5 7.5-5s6 1.5 7.5 5"/></svg>Me</a>
+    </nav>
+  </section>
+
+  <div class="sheet" id="sheet" aria-hidden="true"><div class="panel" role="dialog" aria-modal="true" aria-label="Details"><div class="grab"></div><div id="sheetBody" style="display:flex;flex-direction:column;gap:14px"></div></div></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+
+<!-- ================= SHEET TEMPLATES ================= -->
+<template id="t-result">
+  <div class="sheet-head"><img src="assets/mascot.svg" alt=""><h2 data-r="title">Hidden in the Library</h2><button class="x" data-close aria-label="Close">×</button></div>
+  <p class="note" data-r="lead"></p>
+  <div class="block">
+    <h3>Babbly address <span class="chip" data-r="lock"></span></h3>
+    <div class="hexline"><span data-r="hex"></span><em data-r="hexlen"></em></div>
+    <div class="coords" data-r="coords"></div>
+  </div>
+  <div class="block" data-r="realBlock">
+    <h3>Real Library <span class="chip navy">libraryofbabel.info</span></h3>
+    <div data-r="realBody" class="note"></div>
+  </div>
+  <div class="row" data-r="sendRow"><button class="btn primary" data-r="send">Send to a Babbler</button></div>
+  <div class="row">
+    <button class="btn ghost small" data-r="share">Share</button>
+    <button class="btn ghost small" data-r="copy">Copy code</button>
+    <button class="btn ghost small" data-r="save">Save</button>
+    <button class="btn ghost small" data-r="view">View page</button>
+  </div>
+</template>
+
+<template id="t-open">
+  <div class="sheet-head"><img src="assets/mascot.svg" alt=""><h2 data-r="title">Open a Babble</h2><button class="x" data-close aria-label="Close">×</button></div>
+  <p class="note" data-r="from"></p>
+  <div class="field" data-r="pasteField">
+    <label class="lbl" for="openIn">Babble code, link or page text</label>
+    <textarea id="openIn" class="mono" rows="4" placeholder="bbl1.L.1204.127.2.4.9.131.7k2q9…"></textarea>
+    <div class="meta" data-r="hint"><span></span></div>
+  </div>
+  <div class="block hidden" data-r="lobCard">
+    <span>This is a page on libraryofbabel.info. Open it, copy all the text on the page, and paste it above.</span>
+    <a class="btn ghost small" data-r="lobLink" target="_blank" rel="noopener noreferrer" href="https://libraryofbabel.info">Open the page ↗</a>
+  </div>
+  <div class="field hidden" data-r="passField">
+    <label class="lbl" for="openPass">Passphrase</label>
+    <div class="passrow"><input type="password" id="openPass" autocomplete="off"><button type="button" class="eye" data-eye="openPass">Show</button></div>
+  </div>
+  <div class="err hidden" data-r="err" role="alert"></div>
+  <button class="btn primary big" data-r="go">Open</button>
+  <div class="block hidden" data-r="out">
+    <span class="chip ok" data-r="okChip">✓ Unlocked</span>
+    <div class="quote" data-r="text"></div>
+    <div class="row">
+      <button class="btn ghost small" data-r="reply">Reply</button>
+      <button class="btn ghost small" data-r="save">Save</button>
+      <button class="btn ghost small" data-r="view">View page</button>
+      <a class="btn ghost small hidden" data-r="real" target="_blank" rel="noopener noreferrer" href="https://libraryofbabel.info">Real Library ↗</a>
+    </div>
+  </div>
+  <button class="btn quiet hidden" data-r="remove">Remove from this list</button>
+</template>
+
+<template id="t-send">
+  <div class="sheet-head"><h2>Send to a Babbler</h2><button class="x" data-close aria-label="Close">×</button></div>
+  <div class="field">
+    <label class="lbl" for="sendTo">Username</label>
+    <input type="search" id="sendTo" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Start typing a name" autofocus>
+  </div>
+  <div class="suggest" data-r="list"></div>
+  <div class="err hidden" data-r="err" role="alert"></div>
+  <p class="note">They'll see it in their Inbox. The server only stores the address, never your passphrase.</p>
+</template>
+
+<template id="t-page">
+  <div class="sheet-head"><h2 data-r="title">Page</h2><button class="x" data-close aria-label="Close">×</button></div>
+  <div class="coords" data-r="coords"></div>
+  <details><summary data-r="hexsum">Full hexagon name</summary><div class="fullhex" data-r="hex"></div></details>
+  <div class="pagetext" data-r="text"></div>
+</template>
+
+<template id="t-install">
+  <div class="sheet-head"><img src="assets/mascot.svg" alt=""><h2>Install Babbly</h2><button class="x" data-close aria-label="Close">×</button></div>
+  <button class="btn primary hidden" data-r="install">Install now</button>
+  <div class="block" data-r="ios">
+    <h3>iPhone / iPad (Safari)</h3>
+    <ol class="steps"><li>Open this page in <b>Safari</b>.</li><li>Tap the <b>Share</b> button (square with an arrow).</li><li>Choose <b>Add to Home Screen</b>, then <b>Add</b>.</li></ol>
+  </div>
+  <div class="block" data-r="android">
+    <h3>Android (Chrome)</h3>
+    <ol class="steps"><li>Open this page in <b>Chrome</b>.</li><li>Tap the <b>⋮</b> menu.</li><li>Choose <b>Install app</b> or <b>Add to Home screen</b>.</li></ol>
+  </div>
+  <p class="note" data-r="https"></p>
+</template>
+
+<template id="t-password">
+  <div class="sheet-head"><h2>Change password</h2><button class="x" data-close aria-label="Close">×</button></div>
+  <div class="field"><label class="lbl" for="pwCur">Current password</label><input type="password" id="pwCur" autocomplete="current-password" autofocus></div>
+  <div class="field"><label class="lbl" for="pwNew">New password</label><input type="password" id="pwNew" autocomplete="new-password" placeholder="At least 8 characters"></div>
+  <div class="err hidden" data-r="err" role="alert"></div>
+  <button class="btn primary" data-r="go">Save new password</button>
+</template>
+
+<template id="t-ai">
+  <div class="sheet-head"><h2>AI helper</h2><button class="x" data-close aria-label="Close">×</button></div>
+  <p data-r="state"></p>
+  <p class="note">Babbly's AI runs on a model you host yourself (like Ollama on your computer), so no Claude or OpenAI key is needed. When no model is reachable, Babbly uses its built-in word swaps instead, and everything still works.</p>
+</template>
+
+<template id="t-how">
+  <div class="sheet-head"><img src="assets/mascot.svg" alt=""><h2>How Babbly works</h2><button class="x" data-close aria-label="Close">×</button></div>
+  <div class="note" style="display:flex;flex-direction:column;gap:10px;color:var(--text)">
+    <p style="margin:0">The Library holds every possible page of 3,200 characters made from 29 symbols: a–z, space, comma and period. Each page has exactly one address: hexagon, wall, shelf, volume, page.</p>
+    <p style="margin:0"><b>Lock</b> encrypts your message with AES-256 using your passphrase on your own device. Only the scrambled text goes into the Library, so the address alone reveals nothing.</p>
+    <p style="margin:0"><b>Babbly address</b> is Babbly's own Library, worked out by math in your browser. <b>Real Library</b> also looks your text up on Jonathan Basile's libraryofbabel.info and gives you that site's real hex code.</p>
+    <p style="margin:0">Addresses are about 3,000 characters long, because a page can't be described with less information than it holds.</p>
+  </div>
+</template>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
